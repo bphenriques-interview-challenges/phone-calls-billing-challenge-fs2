@@ -1,0 +1,31 @@
+name: Test
+
+on:
+  push:
+    branches: [ 'main' ]
+  pull_request:
+    branches: [ 'main' ]
+
+jobs:
+  action:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Code
+        uses: actions/checkout@v2
+
+      - name: Install Scala
+        uses: olafurpg/setup-scala@v11
+        with:
+          java-version: openjdk@1.11
+
+      - name: Set SBT Cache
+        uses: coursier/cache-action@v6
+
+      - name: Static Code Analysis
+        run: sbt scalafmtCheckAll scalafmtSbtCheck
+
+      - name: Test and Integration Test
+        run: sbt coverage test "IntegrationTest / test"
+
+      - name: Validate Code Coverage
+        run: sbt coverageReport
