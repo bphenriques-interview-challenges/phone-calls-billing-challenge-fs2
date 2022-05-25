@@ -26,6 +26,9 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "munit-cats-effect-3" % "1.0.7" % Test
     ),
 
+    // Enable all options from sbt-tpolecat except fatal warnings
+    scalacOptions -= "-Xfatal-warnings",
+
     // Coverage
     coverageFailOnMinimum := true,
     coverageMinimumStmtTotal := 70
