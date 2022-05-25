@@ -1,3 +1,4 @@
+
 ThisBuild / scalaVersion := "2.13.8"
 ThisBuild / organization := "com.bphenriques"
 ThisBuild / version := "0.1.0-SNAPSHOT"
@@ -18,6 +19,7 @@ lazy val root = (project in file("."))
       "org.typelevel" %% "log4cats-core" % "2.3.1",
       "org.typelevel" %% "log4cats-slf4j" % "2.3.1",
       "ch.qos.logback" % "logback-classic" % "1.2.11" % Runtime,
+      "net.logstash.logback" % "logstash-logback-encoder" % "7.2", // JSON Logging
 
       // Testing
       "org.scalameta" %% "munit" % "0.7.29" % Test,
