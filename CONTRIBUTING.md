@@ -2,11 +2,6 @@
 
 This project is developed in Scala and [scala-sbt](https://www.scala-sbt.org/) as the build tool.
 
-### Requirements
-
-* Sbt 1.2.x.
-* Scala 2.12.8.
-
 ### Quick Guide
 
 Deploy the application:
