@@ -1,4 +1,4 @@
-[![Build](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/test.yml/badge.svg?branch=main)](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/test.yml)
+[![Test](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/test.yaml/badge.svg)](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/test.yaml)
 
 Cats/Cats-Effects/FS2 counterpart of another challenge I made in 2017 using plain-scala:
 - Using a mixture of `fs2-io` and `fs2-data` to process CSV files.
