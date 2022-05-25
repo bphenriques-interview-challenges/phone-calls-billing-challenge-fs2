@@ -90,9 +90,9 @@ object Tariff {
               .toList
               .combineAll(Bill.Monoid)
 
-            log.debug(s"All Bills before discount: $billsPerCaller") >>
-              log.debug(s"Callers that spent more time on the phone: $callersHighestTotalDuration") >>
-              log.debug(s"Final Bill: $result").as(result)
+            log.debug(s"All bills per caller: $billsPerCaller") >>
+              log.debug(s"Callers with highest total duration: $callersHighestTotalDuration") >>
+              log.debug(s"Final bill: $result").as(result)
           }
     }
   }
