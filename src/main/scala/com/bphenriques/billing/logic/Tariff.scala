@@ -2,7 +2,7 @@ package com.bphenriques.billing.logic
 
 import cats.effect.{IO, Ref}
 import cats.syntax.all._
-import com.bphenriques.billing.model.{Bill, CallRecord, Contact}
+import com.bphenriques.billing.model.{Bill, CallRecord}
 import org.typelevel.log4cats.SelfAwareStructuredLogger
 import org.typelevel.log4cats.slf4j.Slf4jLogger
 
@@ -53,12 +53,12 @@ object Tariff {
   // The caller with the most calls will not pay.
   // If there are multiple callers with the same duration, drop both of them.
   def multipleMultiple(singleTariff: Tariff[CallRecord]): Tariff[fs2.Stream[IO, CallRecord]] = {
-    def recordsToBillPerCaller(records: fs2.Stream[IO, CallRecord]): IO[Map[Contact, Bill]] = {
+    def recordsToBillPerCaller(records: fs2.Stream[IO, CallRecord]): IO[Map[String, Bill]] = {
       fs2.Stream
-        .eval(Ref.of[IO, Map[Contact, Bill]](Map.empty))
+        .eval(Ref.of[IO, Map[String, Bill]](Map.empty))
         .flatMap { callerToBill =>
           records
-            .groupAdjacentBy(_.from)(Contact.Eq)
+            .groupAdjacentBy(_.from)
             .evalMap { case (caller, records) => // FIXME: parEvalMap leads to incomplete callerToBill
               records
                 .traverse(singleTariff.process)

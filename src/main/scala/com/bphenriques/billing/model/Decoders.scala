@@ -18,20 +18,20 @@ object Decoders {
   }
 
   object CallRecordWithHeaders extends CsvRowDecoder[CallRecord, String] {
-    private val TimestampFormat: DateTimeFormatter = DateTimeFormatter.ofPattern("HH:mm:ss")
+    implicit val timeDecoder: CellDecoder[LocalTime] =
+      CellDecoder.localTimeDecoder(DateTimeFormatter.ofPattern("HH:mm:ss"))
 
-    implicit val timeDecoder: CellDecoder[LocalTime] = CellDecoder.localTimeDecoder(TimestampFormat)
-    implicit val contactDecoder: CellDecoder[Contact] =
+    val nonEmptyStringDecoder: CellDecoder[String] =
       CellDecoder[String].emap(s =>
-        Either.cond(!s.isBlank, Contact(s.trim), new DecoderError(s"The contact must be a non-blank string"))
+        Either.cond(!s.isBlank, s.trim, new DecoderError(s"The contact must be a non-blank string"))
       )
 
     def apply(row: CsvRow[String]): DecoderResult[CallRecord] =
       for {
         startTime <- row.as[LocalTime](CsvColumns.TimeOfStart)
         endTime <- row.as[LocalTime](CsvColumns.TimeOfFinish)
-        from <- row.as[Contact](CsvColumns.CallFrom)
-        to <- row.as[Contact](CsvColumns.CallTo)
+        from <- row.as[String](CsvColumns.CallFrom).flatMap(nonEmptyStringDecoder.apply)
+        to <- row.as[String](CsvColumns.CallTo).flatMap(nonEmptyStringDecoder.apply)
       } yield CallRecord(startTime, endTime, from, to)
   }
 }

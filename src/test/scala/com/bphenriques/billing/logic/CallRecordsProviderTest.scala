@@ -1,6 +1,6 @@
 package com.bphenriques.billing.logic
 
-import com.bphenriques.billing.model.{CallRecord, Contact}
+import com.bphenriques.billing.model.CallRecord
 import fs2.io.file.Path
 import munit.CatsEffectSuite
 
@@ -18,8 +18,8 @@ class CallRecordsProviderTest extends CatsEffectSuite {
       .toList
       .assertEquals(
         List(
-          CallRecord(LocalTime.parse("23:58:00"), LocalTime.parse("00:01:59"), Contact("A"), Contact("B")),
-          CallRecord(LocalTime.parse("23:50:00"), LocalTime.parse("00:10:00"), Contact("B"), Contact("A"))
+          CallRecord(LocalTime.parse("23:58:00"), LocalTime.parse("00:01:59"), "A", "B"),
+          CallRecord(LocalTime.parse("23:50:00"), LocalTime.parse("00:10:00"), "B", "A")
         )
       )
   }

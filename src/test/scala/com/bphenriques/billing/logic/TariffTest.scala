@@ -1,7 +1,7 @@
 package com.bphenriques.billing.logic
 
 import com.bphenriques.billing.logic.Tariff.{PriceAfter5Minutes, PriceUpTo5Minutes}
-import com.bphenriques.billing.model.{Bill, CallRecord, Contact}
+import com.bphenriques.billing.model.{Bill, CallRecord}
 import munit.CatsEffectSuite
 
 import java.time.LocalTime
@@ -11,7 +11,7 @@ import scala.concurrent.duration.{Duration, DurationInt, FiniteDuration}
 class TariffTest extends CatsEffectSuite {
 
   private def callWithDuration(duration: FiniteDuration): CallRecord =
-    CallRecord(LocalTime.NOON, LocalTime.NOON.plus(duration.toNanos, ChronoUnit.NANOS), Contact("A"), Contact("B"))
+    CallRecord(LocalTime.NOON, LocalTime.NOON.plus(duration.toNanos, ChronoUnit.NANOS), "A", "B")
 
   test("Zero Duration Call Record") {
     val duration = Duration.Zero
@@ -65,8 +65,8 @@ class TariffTest extends CatsEffectSuite {
       .multipleMultiple(Tariff.singleRecord)
       .process(
         fs2.Stream(
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B"))
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "A", "B"),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "A", "B")
         )
       )
       .assertEquals(Bill.Empty)
@@ -77,8 +77,8 @@ class TariffTest extends CatsEffectSuite {
       .multipleMultiple(Tariff.singleRecord)
       .process(
         fs2.Stream(
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), Contact("A"), Contact("B")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), "A", "B"),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "B", "A")
         )
       )
       .assertEquals(Bill(12.hours - 1.second, BigDecimal(14.55)))
@@ -89,8 +89,8 @@ class TariffTest extends CatsEffectSuite {
       .multipleMultiple(Tariff.singleRecord)
       .process(
         fs2.Stream(
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "A", "B"),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "B", "A")
         )
       )
       .assertEquals(Bill.Empty)
@@ -101,9 +101,9 @@ class TariffTest extends CatsEffectSuite {
       .multipleMultiple(Tariff.singleRecord)
       .process(
         fs2.Stream(
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), Contact("C"), Contact("A")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), "C", "A"),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "A", "B"),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, "B", "A")
         )
       )
       .assertEquals(Bill(12.hours - 1.second, BigDecimal(14.55)))

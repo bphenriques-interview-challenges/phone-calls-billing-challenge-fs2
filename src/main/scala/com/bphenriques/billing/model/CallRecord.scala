@@ -4,18 +4,13 @@ import java.time.{LocalDate, LocalDateTime, LocalTime, Duration => JDuration}
 import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
-case class Contact(phoneNumber: String)
-object Contact {
-  val Eq: cats.Eq[Contact] = (x: Contact, y: Contact) => x == y
-}
-
-case class CallRecord private (duration: FiniteDuration, from: Contact, to: Contact)
+case class CallRecord private (duration: FiniteDuration, from: String, to: String)
 
 object CallRecord {
 
   private val ReferenceDate = LocalDate.of(2000, 1, 1)
 
-  def apply(startTime: LocalTime, endTime: LocalTime, from: Contact, to: Contact): CallRecord = {
+  def apply(startTime: LocalTime, endTime: LocalTime, from: String, to: String): CallRecord = {
     val (start, end) = if (endTime.isBefore(startTime)) {
       (
         LocalDateTime.of(ReferenceDate, startTime),
