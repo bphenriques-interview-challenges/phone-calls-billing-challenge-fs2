@@ -5,7 +5,11 @@ import java.util.concurrent.TimeUnit
 import scala.concurrent.duration.FiniteDuration
 
 case class Contact(phoneNumber: String)
-case class CallRecord private (duration: FiniteDuration, from: Contact, to: Contact) {}
+object Contact {
+  val Eq: cats.Eq[Contact] = (x: Contact, y: Contact) => x == y
+}
+
+case class CallRecord private (duration: FiniteDuration, from: Contact, to: Contact)
 
 object CallRecord {
 

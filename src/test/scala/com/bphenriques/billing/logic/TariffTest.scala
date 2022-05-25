@@ -65,10 +65,47 @@ class TariffTest extends CatsEffectSuite {
       .multipleMultiple(Tariff.singleRecord)
       .process(
         fs2.Stream(
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT, Contact("A"), Contact("B")),
-          CallRecord(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT, Contact("A"), Contact("B"))
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B"))
         )
       )
       .assertEquals(Bill.Empty)
+  }
+
+  test("Multiple records with 2 caller returns a bill with the caller with less phone-calls") {
+    Tariff
+      .multipleMultiple(Tariff.singleRecord)
+      .process(
+        fs2.Stream(
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), Contact("A"), Contact("B")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+        )
+      )
+      .assertEquals(Bill(12.hours - 1.second, BigDecimal(14.55)))
+  }
+
+  test("Multiple records with 2 caller returns a empty bill if both share the same total duration") {
+    Tariff
+      .multipleMultiple(Tariff.singleRecord)
+      .process(
+        fs2.Stream(
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+        )
+      )
+      .assertEquals(Bill.Empty)
+  }
+
+  test("Multiple records with 3 caller returns the bill of one as the other two share the same total duration") {
+    Tariff
+      .multipleMultiple(Tariff.singleRecord)
+      .process(
+        fs2.Stream(
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON.minusSeconds(1), Contact("C"), Contact("A")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("A"), Contact("B")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.NOON, Contact("B"), Contact("A"))
+        )
+      )
+      .assertEquals(Bill(12.hours - 1.second, BigDecimal(14.55)))
   }
 }
