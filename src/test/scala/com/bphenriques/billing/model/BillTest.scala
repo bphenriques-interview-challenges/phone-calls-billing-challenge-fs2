@@ -29,29 +29,9 @@ class BillTest extends FunSuite {
     assertEquals(monoid.combine(monoid.combine(x, y), z), monoid.combine(x, monoid.combine(y, z)))
   }
 
-  test("TotalDurationOrdering") {
-    val x = Bill(1.second, 2.seconds, BigDecimal(1))
-    val y = Bill(2.seconds, 3.seconds, BigDecimal(4))
-    val z = Bill(4.seconds, 4.seconds, BigDecimal(5))
-
-    val ordering = Bill.TotalDurationOrdering
-
-    assert(ordering.compare(x, x) == 0)
-    assert(ordering.compare(x, y) == -1)
-    assert(ordering.compare(y, z) == -1)
-    assert(ordering.compare(z, x) == 1)
-  }
-
   test("Format") {
     assertEquals(
       Bill(1.second, 2.seconds, BigDecimal(1)).format(Bill.DefaultFormat),
-      "1.00"
-    )
-  }
-
-  test("toString") {
-    assertEquals(
-      Bill(1.second, 2.seconds, BigDecimal(1)).toString,
       "1.00"
     )
   }

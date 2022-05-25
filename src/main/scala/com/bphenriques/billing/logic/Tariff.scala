@@ -78,25 +78,23 @@ object Tariff {
 
     new Tariff[fs2.Stream[IO, CallRecord]] {
       override def process(records: fs2.Stream[IO, CallRecord]): IO[Bill] =
-        log.debug("Creating the set of bill for each caller...") >>
-          recordsToBillPerCaller(records)
-            .map { billsPerCaller =>
-              val highestDuration = billsPerCaller.toList
-                .sortBy { case (_, bill) => bill }(Bill.TotalDurationOrdering.reverse)
-                .map { case (_, highestDuration) => highestDuration.maxDuration }
-                .headOption
-
-              val callersSharingHighDuration = highestDuration match {
-                case Some(duration) => billsPerCaller.takeWhile { case (_, bill) => bill.maxDuration == duration }
-                case None           => List.empty
-              }
-
-              billsPerCaller
-                .removedAll(callersSharingHighDuration.map { case (caller, _) => caller })
-                .values
-                .toList
-                .combineAll(Bill.Monoid)
+        recordsToBillPerCaller(records)
+          .flatMap { billsPerCaller =>
+            val callersHighestTotalDuration = billsPerCaller.values.map(_.totalDuration).maxOption match {
+              case Some(total) => billsPerCaller.filter { case (_, bill) => bill.totalDuration == total }
+              case None        => billsPerCaller
             }
+
+            val result = billsPerCaller
+              .removedAll(callersHighestTotalDuration.map { case (caller, _) => caller })
+              .values
+              .toList
+              .combineAll(Bill.Monoid)
+
+            log.debug(s"All Bills before discount: $billsPerCaller") >>
+              log.debug(s"Callers that spent more time on the phone: $callersHighestTotalDuration") >>
+              log.debug(s"Final Bill: $result").as(result)
+          }
     }
   }
 }

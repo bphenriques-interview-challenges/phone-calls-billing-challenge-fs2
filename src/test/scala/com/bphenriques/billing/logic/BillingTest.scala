@@ -8,25 +8,25 @@ import munit.CatsEffectSuite
 
 class BillingTest extends CatsEffectSuite {
 
-  private val validSamplesFolder: Path = Path(getClass.getClassLoader.getResource("valid-samples").getPath)
-  private val invalidSamplesFolder: Path = Path(getClass.getClassLoader.getResource("invalid-samples").getPath)
+  private val validSamplesFolder: Path = Path("src/test/resources/valid-samples")
+  private val invalidSamplesFolder: Path = Path("src/test/resources/invalid-samples")
 
   test("Invalid CSV files") {
     val billing = Billing()
     Files[IO]
-      .list(invalidSamplesFolder, ".csv")
+      .list(invalidSamplesFolder, "*.csv")
       .evalMap { inputFile =>
         billing
           .process(inputFile)
           .map(_.format(Bill.DefaultFormat))
           .intercept[Throwable]
-      }
+      }.compile.last.void
   }
 
   test("Valid CSV files") {
     val billing = Billing()
     Files[IO]
-      .list(validSamplesFolder, ".csv")
+      .list(validSamplesFolder, "*.csv")
       .evalMap { inputFile =>
         val expectedFile = inputFile.parent.get / s"${inputFile.fileName}.expected"
         Files[IO]
@@ -39,8 +39,8 @@ class BillingTest extends CatsEffectSuite {
             billing
               .process(inputFile)
               .map(_.format(Bill.DefaultFormat))
-              .assertEquals(expected)
+              .assertEquals(expected.trim)
           }
-      }
+      }.compile.last.void
   }
 }
