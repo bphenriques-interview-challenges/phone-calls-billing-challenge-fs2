@@ -1,6 +1,6 @@
 [![Build](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/build.yaml/badge.svg)](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge-fs2/actions/workflows/build.yaml)
 
-Cats/Cats-Effects/FS2 counterpart of another challenge I made in 2017 using plain-scala:
+Cats/Cats-Effects/FS2 counterpart of another [challenge I made in 2017 using plain-scala](https://github.com/bphenriques-interview-challenges/phone-calls-billing-challenge):
 - Using a mixture of `fs2-io` and `fs2-data` to process CSV files.
 - Using `Bill.Monoid` to combine multiple `Bill`.
 - Use `fs2.Stream[IO, CallRecord]` to process records using a streaming approach.
