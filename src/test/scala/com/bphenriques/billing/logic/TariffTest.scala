@@ -22,43 +22,53 @@ class TariffTest extends CatsEffectSuite {
     val duration = 1.second
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 1 * PriceUpTo5Minutes))
+      .assertEquals(Bill(duration, 1 * PriceUpTo5Minutes))
   }
 
   test("Right before first minute") {
     val duration = 59.second
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 1 * PriceUpTo5Minutes))
+      .assertEquals(Bill(duration, 1 * PriceUpTo5Minutes))
   }
 
   test("Right at 1 minute") {
     val duration = 60.seconds
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 2 * PriceUpTo5Minutes))
+      .assertEquals(Bill(duration, 2 * PriceUpTo5Minutes))
   }
 
   test("Right before five minutes") {
     val duration = 5.minutes - 1.seconds
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 5 * PriceUpTo5Minutes))
+      .assertEquals(Bill(duration, 5 * PriceUpTo5Minutes))
   }
 
   test("Right at five minutes") {
     val duration = 5.minutes
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 5 * PriceUpTo5Minutes + 1 * PriceAfter5Minutes))
+      .assertEquals(Bill(duration, 5 * PriceUpTo5Minutes + 1 * PriceAfter5Minutes))
   }
 
   test("10 minutes call") {
     val duration = 10.minutes
     Tariff.singleRecord
       .process(callWithDuration(duration))
-      .assertEquals(Bill(duration, duration, 5 * PriceUpTo5Minutes + 6 * PriceAfter5Minutes))
+      .assertEquals(Bill(duration, 5 * PriceUpTo5Minutes + 6 * PriceAfter5Minutes))
   }
 
-  test("Multiple - Bills correctly multiple records") {}
+  test("Multiple records with only 1 caller returns a bill with no cost") {
+    Tariff
+      .multipleMultiple(Tariff.singleRecord)
+      .process(
+        fs2.Stream(
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT, Contact("A"), Contact("B")),
+          CallRecord(LocalTime.MIDNIGHT, LocalTime.MIDNIGHT, Contact("A"), Contact("B"))
+        )
+      )
+      .assertEquals(Bill.Empty)
+  }
 }

@@ -20,7 +20,10 @@ class BillingTest extends CatsEffectSuite {
           .process(inputFile)
           .map(_.format(Bill.DefaultFormat))
           .intercept[Throwable]
-      }.compile.last.void
+      }
+      .compile
+      .last
+      .void
   }
 
   test("Valid CSV files") {
@@ -41,6 +44,9 @@ class BillingTest extends CatsEffectSuite {
               .map(_.format(Bill.DefaultFormat))
               .assertEquals(expected.trim)
           }
-      }.compile.last.void
+      }
+      .compile
+      .last
+      .void
   }
 }

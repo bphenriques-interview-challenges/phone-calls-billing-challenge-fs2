@@ -42,7 +42,6 @@ object Tariff {
         IO(
           Bill(
             record.duration,
-            record.duration,
             (0L to record.duration.toMinutes)
               .map(minutes => priceAt(Duration(minutes, TimeUnit.MINUTES)))
               .sum
@@ -80,8 +79,8 @@ object Tariff {
       override def process(records: fs2.Stream[IO, CallRecord]): IO[Bill] =
         recordsToBillPerCaller(records)
           .flatMap { billsPerCaller =>
-            val callersHighestTotalDuration = billsPerCaller.values.map(_.totalDuration).maxOption match {
-              case Some(total) => billsPerCaller.filter { case (_, bill) => bill.totalDuration == total }
+            val callersHighestTotalDuration = billsPerCaller.values.map(_.callsDuration).maxOption match {
+              case Some(total) => billsPerCaller.filter { case (_, bill) => bill.callsDuration == total }
               case None        => billsPerCaller
             }
 
