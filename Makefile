@@ -15,6 +15,6 @@ test:
 	sbt test
 
 # Generates a distributable ZIP file under target/universal/*.zip
-package: clean
-	sbt universal:packageBin
+package:
+	sbt "Universal / packageBin"
 
