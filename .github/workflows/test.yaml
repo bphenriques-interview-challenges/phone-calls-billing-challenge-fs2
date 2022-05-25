@@ -24,8 +24,8 @@ jobs:
       - name: Static Code Analysis
         run: sbt scalafmtCheckAll scalafmtSbtCheck
 
-      - name: Test and Integration Test
-        run: sbt coverage test "IntegrationTest / test"
+      - name: Test
+        run: sbt coverage test
 
       - name: Validate Code Coverage
         run: sbt coverageReport
