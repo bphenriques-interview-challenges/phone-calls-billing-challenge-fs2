@@ -59,16 +59,18 @@ object Tariff {
         .flatMap { callerToBill =>
           records
             .groupAdjacentBy(_.from)
-            .evalMap { case (caller, records) => // FIXME: parEvalMap leads to incomplete callerToBill
+            .parEvalMap(16) { case (caller, records) =>
               records
                 .traverse(singleTariff.process)
                 .map(_.combineAll(Bill.Monoid))
                 .flatMap { bill =>
-                  callerToBill.updateAndGet { map =>
-                    map + (caller -> Bill.Monoid.combine(map.getOrElse(caller, Bill.Empty), bill))
+                  callerToBill.update { map =>
+                    val currentBill = map.getOrElse(caller, Bill.Empty)
+                    map + (caller -> Bill.Monoid.combine(currentBill, bill))
                   }
                 }
             }
+            .evalMap(_ => callerToBill.get) // Get the latest state
         }
         .compile
         .last
