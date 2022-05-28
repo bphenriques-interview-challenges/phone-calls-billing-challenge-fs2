@@ -18,13 +18,13 @@ object Billing {
 
   def apply(): Billing = new Billing {
     override def process(path: Path): IO[Bill] = {
-      val processor = Tariff.multipleMultiple(Tariff.singleRecord)
+      val tariff = Tariff.default
 
       log.debug(s"Computing the bill given CSV file at '$path'...") >>
         CallRecordsProvider
           .fromCSV(path)
           .read()
-          .pipe(processor.process)
+          .pipe(tariff.multipleCalls)
     }
   }
 }

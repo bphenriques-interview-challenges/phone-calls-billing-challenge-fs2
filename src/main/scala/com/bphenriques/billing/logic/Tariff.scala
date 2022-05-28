@@ -10,8 +10,9 @@ import java.util.concurrent.TimeUnit
 import scala.collection.immutable.TreeMap
 import scala.concurrent.duration.{Duration, DurationInt}
 
-trait Tariff[T] {
-  def process(value: T): IO[Bill]
+trait Tariff {
+  def singleCall(call: CallRecord): IO[Bill]
+  def multipleCalls(calls: fs2.Stream[IO, CallRecord]): IO[Bill]
 }
 
 object Tariff {
@@ -21,7 +22,11 @@ object Tariff {
   val PriceUpTo5Minutes = 0.05
   val PriceAfter5Minutes = 0.02
 
-  def singleRecord: Tariff[CallRecord] = new Tariff[CallRecord] {
+  // Single calls up to 5 minutes cost 0.05 cents per minute.
+  // Single calls from 5 minutes onwards cost 0.02 cents per minute.
+  // The caller with the most calls will not pay.
+  // If there are multiple callers with the same duration, drop both of them.
+  def default: Tariff = new Tariff {
     val PriceRange: TreeMap[Duration, BigDecimal] = TreeMap(
       5.minutes - 1.second -> PriceUpTo5Minutes,
       5.minutes -> PriceAfter5Minutes
@@ -31,29 +36,25 @@ object Tariff {
       PriceRange
         .rangeFrom(duration)
         .headOption
-        .map(_._1)
+        .map { case (duration, _) => duration }
         .getOrElse(PriceRange.rangeTo(duration).lastKey)
     )
 
-    override def process(record: CallRecord): IO[Bill] =
-      if (record.duration == Duration.Zero) {
+    override def singleCall(call: CallRecord): IO[Bill] =
+      if (call.duration == Duration.Zero) {
         Bill.Empty.pure[IO]
       } else {
         IO(
           Bill(
-            record.duration,
-            (0L to record.duration.toMinutes)
+            call.duration,
+            (0L to call.duration.toMinutes)
               .map(minutes => priceAt(Duration(minutes, TimeUnit.MINUTES)))
               .sum
           )
         )
       }
-  }
 
-  // The caller with the most calls will not pay.
-  // If there are multiple callers with the same duration, drop both of them.
-  def multipleMultiple(singleTariff: Tariff[CallRecord]): Tariff[fs2.Stream[IO, CallRecord]] = {
-    def recordsToBillPerCaller(records: fs2.Stream[IO, CallRecord]): IO[Map[String, Bill]] = {
+    def createBillPerCaller(records: fs2.Stream[IO, CallRecord]): IO[Map[String, Bill]] =
       fs2.Stream
         .eval(Ref.of[IO, Map[String, Bill]](Map.empty))
         .flatMap { callerToBill =>
@@ -61,7 +62,7 @@ object Tariff {
             .groupAdjacentBy(_.from)
             .parEvalMap(16) { case (caller, records) =>
               records
-                .traverse(singleTariff.process)
+                .traverse(singleCall)
                 .map(_.combineAll(Bill.Monoid))
                 .flatMap { bill =>
                   callerToBill.update { map =>
@@ -70,32 +71,29 @@ object Tariff {
                   }
                 }
             }
-            .evalMap(_ => callerToBill.get) // Get the latest state
+            .evalMap(_ => callerToBill.get)
         }
         .compile
         .last
         .map(_.getOrElse(Map.empty))
-    }
 
-    new Tariff[fs2.Stream[IO, CallRecord]] {
-      override def process(records: fs2.Stream[IO, CallRecord]): IO[Bill] =
-        recordsToBillPerCaller(records)
-          .flatMap { billsPerCaller =>
-            val callersHighestTotalDuration = billsPerCaller.values.map(_.callsDuration).maxOption match {
-              case Some(total) => billsPerCaller.filter { case (_, bill) => bill.callsDuration == total }
-              case None        => billsPerCaller
-            }
-
-            val result = billsPerCaller
-              .removedAll(callersHighestTotalDuration.map { case (caller, _) => caller })
-              .values
-              .toList
-              .combineAll(Bill.Monoid)
-
-            log.debug(s"All bills per caller: $billsPerCaller") >>
-              log.debug(s"Callers with highest total duration: $callersHighestTotalDuration") >>
-              log.debug(s"Final bill: $result").as(result)
+    override def multipleCalls(calls: fs2.Stream[IO, CallRecord]): IO[Bill] =
+      createBillPerCaller(calls)
+        .flatMap { billPerCaller =>
+          val callersHighestTotalDuration = billPerCaller.values.map(_.callsDuration).maxOption match {
+            case Some(total) => billPerCaller.filter { case (_, bill) => bill.callsDuration == total }
+            case None        => billPerCaller
           }
-    }
+
+          val result = billPerCaller
+            .removedAll(callersHighestTotalDuration.map { case (caller, _) => caller })
+            .values
+            .toList
+            .combineAll(Bill.Monoid)
+
+          log.debug(s"All bills per caller: $billPerCaller") >>
+            log.debug(s"Callers with highest total duration: $callersHighestTotalDuration") >>
+            log.debug(s"Final bill: $result").as(result)
+        }
   }
 }
